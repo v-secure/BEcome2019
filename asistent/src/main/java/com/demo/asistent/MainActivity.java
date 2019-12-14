@@ -1,13 +1,22 @@
 package com.demo.asistent;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.demo.become.IMyHelloInterface;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        Intent myIntent = new Intent(this, MyOtherService.class);
+        bindService(myIntent, connection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -49,4 +61,28 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private ServiceConnection connection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            Log.d("Asistent", "onServiceConnected");
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            IMyHelloInterface binder = IMyHelloInterface.Stub.asInterface(service);
+            // mBound = true;
+            try {
+                Log.d("Asistent", binder.sayHello());
+                Log.d("Asistent", binder.sayAnotherHello());
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            //mBound = false;
+            Log.d("Asistent", "onServiceDisconnected");
+        }
+    };
 }

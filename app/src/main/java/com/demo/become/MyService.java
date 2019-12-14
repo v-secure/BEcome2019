@@ -26,6 +26,7 @@ public class MyService extends IntentService {
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         Log.d("Service", "Am primit intent!");
+        Log.d("Service", Thread.currentThread().getName());
         try {
             URL myUrl = new URL("https://opentdb.com/api.php?amount=1&category=32&difficulty=hard&type=multiple");
             InputStream myStream = myUrl.openConnection().getInputStream();

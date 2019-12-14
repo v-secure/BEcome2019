@@ -1,10 +1,15 @@
 package com.demo.become;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
@@ -28,12 +33,25 @@ public class TriviaActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        final Handler mainHandler = new Handler();
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Log.d("Thread", Thread.currentThread().getName());
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                ((TextView) findViewById(R.id.intrebare)).setText("Intrebare din thread");
+                            }
+                        });
+                    }
+                }).start();
+                Log.d("Thread", "gata");
             }
         });
 
@@ -75,8 +93,8 @@ public class TriviaActivity extends AppCompatActivity {
             }
         };
 
-        Intent myIntent = new Intent(this, MyService.class);
-        startService(myIntent);
+        Intent myIntent = new Intent(this, MyOtherService.class);
+        //startService(myIntent);
     }
     LocalBroadcastManager lbm;
     BroadcastReceiver br;
@@ -85,11 +103,40 @@ public class TriviaActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         lbm.registerReceiver(br, new IntentFilter("avem_intrebare"));
+        Intent myIntent = new Intent(this, MyOtherService.class);
+        bindService(myIntent, connection, Context.BIND_AUTO_CREATE);
+        // run normal
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         lbm.unregisterReceiver(br);
+        Log.d("TRIVIA", "onPause");
+        unbindService(connection);
     }
+
+    private ServiceConnection connection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            Log.d("TRIVIA", "onServiceConnected");
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            IMyHelloInterface binder = IMyHelloInterface.Stub.asInterface(service);
+            // mBound = true;
+            try {
+                Log.d("TRIVIA", binder.sayHello());
+                Log.d("TRIVIA", binder.sayAnotherHello());
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+             //mBound = false;
+            Log.d("TRIVIA", "onServiceDisconnected");
+        }
+    };
 }
