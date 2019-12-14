@@ -1,15 +1,23 @@
 package com.demo.asistent;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
+    SensorManager sensorManager;
+    Sensor proximity;
+    SensorEventListener listener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +34,42 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+        //        for (Sensor sensor : sensorManager.getSensorList(Sensor.TYPE_ALL)) {
+        //            Log.d("Sensor", sensor.getName() + " "
+        //                    + sensor.getVendor() + " " + sensor.getMaximumRange());
+        //        }
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        proximity = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+        if (proximity != null) {
+            Log.d("PROXIMITY", "MaxRange: " + proximity.getMaximumRange());
+            listener = new SensorEventListener() {
+                @Override
+                public void onSensorChanged(SensorEvent event) {
+                    findViewById(R.id.my_View).setAlpha(event.values[0] / 10);
+                }
+
+                @Override
+                public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                    //
+                }
+            };
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (proximity != null) {
+            sensorManager.registerListener(listener, proximity, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (listener != null) {
+            sensorManager.unregisterListener(listener);
+        }
     }
 
     @Override
